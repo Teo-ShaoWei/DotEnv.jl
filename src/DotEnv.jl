@@ -5,26 +5,25 @@ module DotEnv
  can be converted into String), and it will return a Dict with
  the parsed keys and values.
 """
-function parse( src )
-    res = Dict{String,String}()
+function parse(src)
+    res = Dict{String, String}()
     for line in split(String(src), '\n')
         m = match(r"^\s*([\w.-]+)\s*=\s*(.*)?\s*$", line)
-        if m != nothing
+        if m !== nothing
             key = m.captures[1]
             value = string(m.captures[2])
 
-            if (length(value) > 0 && value[1] === '"' && value[end] === '"')
+            if length(value) > 0 && value[1] == value[end] == '"'
                 value = replace(value, r"\\n"m => "\n")
             end
 
             value = replace(value, r"(^['\u0022]|['\u0022]$)" => "")
-
             value = strip(value)
 
-            push!(res, Pair(key, value) )
+            res[key] = value
         end
     end
-    res
+    return res
 end
 
 
@@ -32,12 +31,12 @@ end
 `config` reads your .env file, parse the content, stores it to `ENV`,
 and finally return a Dict with the content.
 """
-function config( path )
-    if (isfile(path))
-        parsed = parse(String(read(path)))
+function config(path)
+    if isfile(path)
+        parsed = parse(read(path, String))
 
         for (k, v) in parsed
-            if( !haskey( ENV, k ) )
+            if !haskey(ENV, k)
                 ENV[k] = v
             end
         end
@@ -48,8 +47,8 @@ function config( path )
     end
 end
 
-config( ;path=".env" ) = config(path)
+config(; path=".env") = config(path)
 
-load(opts...) = config(opts...)
+load(args...; kwargs...) = config(args...; kwargs...)
 
 end
